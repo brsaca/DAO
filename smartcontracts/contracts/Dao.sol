@@ -66,11 +66,11 @@ contract MoralisDao {
         return false;
     }
 
-    function checkVoteEligibility(uint256 _id, address _voter) private view returns (
+    function checkVoteEligibility(uint256 _proposalId, address _voter) private view returns (
         bool
     ){
-        for(uint256 i = 0; i < Proposals[_id].canVote.length; i++){
-            if(Proposals[_id].canVote[i] == _voter){
+        for(uint256 i = 0; i < Proposals[_proposalId].canVote.length; i++){
+            if(Proposals[_proposalId].canVote[i] == _voter){
                 return true;
             }
         }  
@@ -92,13 +92,13 @@ contract MoralisDao {
         nextProposal++;
     }
 
-    function voteOnProposal(uint256 _id, bool _vote) public {
-        require(Proposals[_id].exists, "This Proposal does not exist");
-        require(checkVoteEligibility(_id, msg.sender), "You can not vote on this Proposal");
-        require(!Proposals[_id].voteStatus[msg.sender], "You have already voted on this Proposal");
-        require(block.number <= Proposals[_id].deadline, "The deadline has passed for this Proposal");
+    function voteOnProposal(uint256 _proposalId, bool _vote) public {
+        require(Proposals[_proposalId].exists, "This Proposal does not exist");
+        require(checkVoteEligibility(_proposalId, msg.sender), "You can not vote on this Proposal");
+        require(!Proposals[_proposalId].voteStatus[msg.sender], "You have already voted on this Proposal");
+        require(block.number <= Proposals[_proposalId].deadline, "The deadline has passed for this Proposal");
 
-        proposal storage p = Proposals[_id];
+        proposal storage p = Proposals[_proposalId];
 
         if(_vote){
             p.votesUp++;
@@ -107,6 +107,30 @@ contract MoralisDao {
         }
 
         p.voteStatus[msg.sender] = true;
+
+        emit newVote(p.votesUp, p.votesDown, msg.sender, _proposalId, _vote);
     }
 
+    function countVotes(uint256 _proposalId) public {
+        require(msg.sender == owner, "Only owner can count votes");
+        require(Proposals[_proposalId].exists, "This proposal does not exist");
+        require(block.number > Proposals[_proposalId].deadline, "Voting has not concluded");
+        require(!Proposals[_proposalId].countConducted, "Count already conducted");
+
+        proposal storage p = Proposals[_proposalId];
+
+        if(Proposals[_proposalId].votesDown < Proposals[_proposalId].votesUp){
+            p.passed = true;
+        }
+
+        p.countConducted = true;
+
+        emit proposalCount(_proposalId, p.passed);
+    }
+
+    function addTokenId(uint256 _tokenId) public {
+        require(msg.sender == owner, "Only owner can add tokens");
+
+        validTokens.push(_tokenId);
+    }
 }
