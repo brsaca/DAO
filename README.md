@@ -3,4 +3,4 @@ Dao Sample with Moralis
 
 # References
 
-https://www.youtube.com/watch?v=sAcEJcwPTOk
+https://youtu.be/sAcEJcwPTOk?t=1376
